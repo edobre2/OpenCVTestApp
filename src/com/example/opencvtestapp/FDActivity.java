@@ -33,6 +33,7 @@ import org.opencv.objdetect.CascadeClassifier;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -51,10 +52,11 @@ public class FDActivity extends Activity implements CameraBridgeViewBase.CvCamer
     private static final float PI = 3.1415926f;
     private float                  mRelativeFaceSize   = 0.2f;
     private int                    mAbsoluteFaceSize   = 0;
-	
+	private HomeKeyLocker          locker;
     public FDActivity() {
     	Log.i(TAG, "Instantiated a " + this.getClass());
     }
+    
     public BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
     	@Override
     	public void onManagerConnected(int status) {
@@ -112,9 +114,12 @@ public class FDActivity extends Activity implements CameraBridgeViewBase.CvCamer
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	Log.i(TAG, "Called onCreate");
+    	
 		super.onCreate(savedInstanceState);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
+        locker = new HomeKeyLocker();
+        locker.lock(this);
         
  	    if(getIntent()!=null&&getIntent().hasExtra("kill")&&getIntent().getExtras().getInt("kill")==1){
        	    finish();
@@ -171,11 +176,6 @@ public class FDActivity extends Activity implements CameraBridgeViewBase.CvCamer
             mOpenCvCameraView.disableView();
     }
     
-	 @Override
-	public void onAttachedToWindow() {
-	    this.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG|WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        super.onAttachedToWindow();
-	}
 	 
 	@Override
 	public void onCameraViewStarted(int width, int height) {
@@ -210,8 +210,10 @@ public class FDActivity extends Activity implements CameraBridgeViewBase.CvCamer
         Rect[] facesArray = faces.toArray();
         for (int i = 0; i < facesArray.length; i++)
             Core.rectangle(mGray, facesArray[i].tl(), facesArray[i].br(), FACE_RECT_COLOR, 3);
-        if (facesArray.length > 0) 
+        if (facesArray.length > 0) {
+        	locker.unlock();
         	finish();
+        }
         return mGray;
 	}
 }
